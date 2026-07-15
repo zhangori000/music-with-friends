@@ -34,7 +34,7 @@ describe("Spotify adapter contract", () => {
   });
 
   it("clamps limits and maps recent snapshots without claiming duration", async () => {
-    const request = vi.fn(async () =>
+    const request = vi.fn<typeof fetch>(async () =>
       Response.json({
           items: [
             {
@@ -174,7 +174,7 @@ describe("ListenBrainz capability contract", () => {
   });
 
   it("authenticates, clamps limits, and applies documented identity fallbacks", async () => {
-    const request = vi.fn(async () =>
+    const request = vi.fn<typeof fetch>(async () =>
       Response.json({
           payload: {
             listens: [
