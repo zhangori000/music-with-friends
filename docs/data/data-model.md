@@ -1,10 +1,32 @@
 # Logical data model
 
-Status: **Accepted design; live tables are not yet implemented**
+Status: **Browser-local import implemented; server model is accepted design**
 
-No runtime application database is currently configured. This document defines
-the Postgres model for the live-data phase. Names are logical; migrations may
-refine them without weakening the invariants below.
+No runtime server database is currently configured. The web beta uses IndexedDB
+for private imported history; this document also defines the Postgres model for
+the future live-data phase. Names are logical; migrations may refine them
+without weakening the invariants below.
+
+## Current browser-local store
+
+The IndexedDB database `music-with-friends` contains the
+`imported-listening-evidence` object store keyed by deterministic evidence ID,
+with an index on `playedAt`. Each value uses the normalized `ListeningEvidence`
+shape and contains only:
+
+- `source = manual-import` and `kind = user-import`;
+- end timestamp and provider-reported listened milliseconds;
+- title, artist, a Spotify track ID/link when present, and a deterministic ID;
+- `context = null`, because the export has no historical playlist context.
+
+The selected raw JSON is parsed in memory and never stored or uploaded. The
+mapping drops username, IP address, country, platform/device, playback reasons,
+shuffle/offline flags, album fields, podcasts, and private/incognito rows. A
+stable identity deduplicates overlapping files. Clearing the import empties this
+object store; browser-data clearing also removes it.
+
+This store belongs to one browser origin/profile. It has no user, friend, group,
+or server ownership relationship and is not available to the iPhone client.
 
 ## Ownership map
 
@@ -75,8 +97,10 @@ Invariants:
 - Provider evidence keys are stable and idempotent within one connection. If a
   provider lacks an event ID, the adapter defines and versions a deterministic
   fingerprint from provider identity, timestamp, and source identifiers.
-- Spotify evidence is stored only for an approved direct view and is excluded
-  from derived analytics by domain policy, not merely by query convention.
+- Spotify Web API evidence is stored only for an approved direct view and is
+  excluded from derived analytics by domain policy, not merely by query
+  convention. Browser-local user-export evidence is tagged `manual-import` so
+  that the two provenance and policy paths cannot be confused.
 - Store only normalized fields needed by the product. Raw provider payloads are
   off by default; any diagnostic retention must be encrypted, short-lived, and
   covered by provider terms and consent.
@@ -126,6 +150,13 @@ quality       = A == 0 ? unavailable : A == N ? exact : partial
 The partial value is the known subtotal, not an estimate of the missing
 duration. API responses must preserve both quality and coverage.
 
+The current Spotify export parser accepts only rows with a valid provider-
+reported duration, so an imported range has full duration coverage. “Exact”
+means the arithmetic sum of accepted `ms_played` values; it does not prove
+archive completeness or that each row was a completed track. A configurable
+minimum-duration filter excludes short rows from a view without mutating the
+stored evidence.
+
 ## Social authorization
 
 `profile.visibility` is one of `private`, `friends`, `groups`, or `public`.
@@ -139,12 +170,20 @@ ListenBrainz still has public upstream history. `consent_record` stores the
 disclosure version the user accepted; it does not pretend to alter upstream
 visibility.
 
+The current manual import has no social authorization path at all. Local data
+must not be uploaded or exposed through friends, groups, public profiles, or
+share links until that use has an accepted policy/consent decision and the
+authorization rules above are implemented.
+
 ## Connections, tokens, and consent
 
 `provider_connection` stores connection status and a reference to encrypted
 server-side credentials, never plaintext tokens. For read-only ListenBrainz,
 validate the user token once and discard it after recording the proven username
 unless a write feature requires continuing authorization.
+
+Local Spotify export import creates no provider connection and stores no token.
+It is a user-directed file operation, not background provider synchronization.
 
 Keep separate timestamps/versions for ownership proof, ingestion consent,
 social sharing consent, terms/policy acknowledgement, revocation, and deletion.

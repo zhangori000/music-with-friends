@@ -78,6 +78,7 @@ export class SpotifyMusicProvider implements MusicProvider {
             kind: item.context.type === "playlist" ? "playlist" : "unknown",
             id: item.context.uri ?? null,
             name: item.context.type,
+            quality: "verified",
           }
         : null,
     }));

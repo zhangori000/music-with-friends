@@ -1,7 +1,10 @@
 # Project working agreement
 
 - Read `docs/product/provider-feasibility.md` before changing provider behavior.
-- Never derive listening metrics from Spotify data. Spotify is direct display and link-out only.
+- Never derive listening metrics from Spotify Web API evidence. Spotify Web API data is
+  direct display and link-out only. A user-selected account-data export may be analyzed
+  locally through the `manual-import` boundary; do not upload or socially redistribute
+  it without a separate policy, consent, authorization, and deletion decision.
 - “Minutes listened” may sum `actualDurationMs`; never substitute catalog track duration.
 - Write the failing behavior or contract test before implementation, then run the narrow test and the relevant wider suite.
 - Keep `src/domain` free of React, Next.js, database, and provider SDK imports.

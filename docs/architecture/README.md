@@ -15,10 +15,24 @@ iPhone client ─┘                         │
                              (Postgres, jobs, providers)
 ```
 
-The current deployed slice is narrower: `/api/v1/demo` returns synthetic data
-and the hosting configuration has no database binding. Postgres, authentication,
-live ingestion, and row-level authorization are accepted next-phase designs,
-not claims about running code.
+The current deployed slice has two paths: `/api/v1/demo` returns synthetic
+social data, while the web-only Spotify history beta parses user-selected files
+and queries IndexedDB without calling the API. The hosting configuration has no
+database binding. Postgres, authentication, social history synchronization,
+live provider ingestion, iPhone import, and row-level authorization are accepted
+next-phase designs, not claims about running code.
+
+```text
+User-selected Spotify JSON
+          │ browser memory (raw file)
+          ▼
+validate + normalize + dedupe
+          │ minimal evidence only
+          ▼
+       IndexedDB ── local range/top/recent queries
+
+No raw upload; no API/social/mobile sync
+```
 
 ## Module responsibilities
 
@@ -27,7 +41,7 @@ not claims about running code.
 | Identity | App users, sessions, account lifecycle | Music-provider credentials |
 | Social | Friend state, groups, membership, profile visibility | Provider publicity or consent |
 | Connections | Provider ownership proof, encrypted credentials, consent, sync cursors | Analytics semantics |
-| Listening | Normalized evidence and its provenance | Provider HTTP details |
+| Listening | Normalized evidence and its provenance | Provider HTTP details or raw import files |
 | Analytics | Half-open range queries and evidence-derived views | Unsupported inference from provider data |
 | Contracts | Versioned `/api/v1` request and response schemas | Persistence models |
 | Infrastructure | Postgres, durable jobs, provider clients, clocks | Business policy |
@@ -46,9 +60,12 @@ shared-model directory.
 3. Infrastructure implements ports and validates untrusted provider payloads.
 4. Domain code imports no React, Next.js, Drizzle, database, or provider SDK.
 5. Provider evidence enters analytics only when its declared capability allows
-   derived analytics.
+   derived analytics. Spotify Web API and `manual-import` are separate sources;
+   one must never be relabeled as the other.
 6. Social visibility is checked on every personalized read; public upstream
    data is never treated as app-level consent.
+7. Raw user files terminate at the browser import boundary. Only the documented
+   normalized allowlist may enter IndexedDB.
 
 The [architecture fitness test](../../tests/architecture/dependency-boundaries.test.ts)
 currently enforces the framework-free domain rule. Add dependency and schema
@@ -65,6 +82,16 @@ contract tests as modules become real.
   ratio, as implemented in the [aggregator](../../src/domain/listening/aggregate.ts).
 - A top playlist exists only when allowed evidence contains verified playlist
   context. Missing context produces `null`, not a guessed playlist.
+- For local Spotify imports, “exact minutes” is the exact sum of accepted
+  provider-reported `ms_played`, not an assertion of archive completeness.
+- Imported-history top artist and recent 20 operate on accepted rows in the
+  selected half-open range; an optional short-play threshold changes the view,
+  not the stored source evidence.
+
+The export cannot identify historical playlist context. Product-safe
+alternatives are separately named metrics: most launched through this app,
+approximate playlist affinity based on user-supplied inventory after policy
+review, or user-attested source. None is “most played playlist.”
 
 ## Persistence and asynchronous work
 
@@ -82,6 +109,12 @@ Messages may be delivered more than once; business effects remain idempotent.
 We do not claim exactly-once transport, and listening evidence is not an
 event-sourced domain model.
 
+The local importer is intentionally outside this job system: it is synchronous,
+user-directed browser work with no server observer. A Spotify Recently Played
+polling loop remains disabled pending written permission; even if approved, its
+rolling 50-item window and missing actual duration cannot provide authoritative
+history.
+
 ## Security and privacy boundary
 
 - Provider secrets stay server-side and encrypted.
@@ -89,6 +122,8 @@ event-sourced domain model.
 - Authorization is evaluated against accepted friendship or active group
   membership, matching the [visibility domain rule](../../src/domain/social/visibility.ts).
 - Provider-derived rows retain source and policy provenance.
+- Local Spotify export rows remain in IndexedDB; raw files are neither uploaded
+  nor retained, and podcasts plus private/incognito rows are ignored.
 - Disconnect and account deletion cancel work, erase credentials, and remove
   app-held data according to the user's choice and provider terms.
 - ListenBrainz remains public upstream even when this app displays a profile as
@@ -99,5 +134,6 @@ event-sourced domain model.
 - [ADR 001: Modular monolith](adr/001-modular-monolith.md)
 - [ADR 002: Postgres jobs before distributed EDA](adr/002-postgres-jobs-before-distributed-eda.md)
 - [ADR 003: Listening evidence and provider policy](adr/003-listening-evidence-and-provider-policy.md)
+- [ADR 004: Browser-local Spotify history import](adr/004-browser-local-spotify-history-import.md)
 - [Logical data model](../data/data-model.md)
 - [Provider feasibility](../product/provider-feasibility.md)

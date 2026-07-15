@@ -53,6 +53,39 @@ test("serves the same versioned API contract the iPhone app consumes", async () 
   assert.equal(body.recent.length, 8);
 });
 
+test("renders the private browser-side Spotify history import flow", async () => {
+  const app = await worker();
+  const response = await app.fetch(
+    new Request("http://localhost/import", {
+      headers: { accept: "text/html" },
+    }),
+    env,
+    context,
+  );
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  const csp = response.headers.get("content-security-policy") ?? "";
+  assert.match(csp, /default-src 'self'/);
+  assert.match(csp, /connect-src 'self'/);
+  assert.match(csp, /img-src 'self' data:/);
+  assert.match(csp, /object-src 'none'/);
+  assert.match(csp, /base-uri 'self'/);
+  assert.match(csp, /frame-ancestors 'none'/);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("referrer-policy"), "no-referrer");
+  assert.match(response.headers.get("permissions-policy") ?? "", /camera=\(\)/);
+  assert.match(response.headers.get("permissions-policy") ?? "", /microphone=\(\)/);
+  assert.match(response.headers.get("permissions-policy") ?? "", /geolocation=\(\)/);
+  assert.match(html, /Turn your Spotify history into answers/);
+  assert.match(html, /https:\/\/www\.spotify\.com\/account\/privacy\//);
+  assert.match(html, /Request Extended Streaming History/);
+  assert.match(html, /Choose JSON files/);
+  assert.match(html, /Files stay on this device/);
+  assert.match(html, /Top playlist/);
+  assert.match(html, /Spotify.*export does not include playlist context/);
+});
+
 test("removes every disposable starter artifact", async () => {
   const [page, layout, packageJson] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),

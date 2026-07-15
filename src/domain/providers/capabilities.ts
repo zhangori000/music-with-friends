@@ -80,7 +80,8 @@ export const providerCapabilities = {
     arbitraryTimeRanges: true,
     playlistWrite: false,
     backgroundSync: "none",
-    derivedAnalytics: "policy-review",
+    // This source is a user-selected file processed locally, not Spotify Web API data.
+    derivedAnalytics: "allowed",
     socialRedistribution: "explicit-consent",
   },
   demo: {

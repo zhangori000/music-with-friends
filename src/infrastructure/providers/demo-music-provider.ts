@@ -25,6 +25,11 @@ const demoEvidence: ListeningEvidence[] = [
       durationMs: 244_000,
       externalUrl: "https://open.spotify.com/track/1eyzqe2QqGZUmfcPZtrIyt",
     },
-    context: { kind: "playlist", id: "night-drive", name: "Night Drive" },
+    context: {
+      kind: "playlist",
+      id: "night-drive",
+      name: "Night Drive",
+      quality: "verified",
+    },
   },
 ];

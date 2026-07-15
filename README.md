@@ -5,10 +5,11 @@ both a Next.js web app and an Expo iPhone app.
 
 **Live synthetic demo:** https://music-with-friends-delta.vercel.app
 
-The current public slice is intentionally a synthetic demo. Spotify can supply
-recent tracks and Spotify-ranked top items, but its current Developer Policy
-blocks apps from calculating new listener metrics. That constraint is enforced
-in code and tests, not left as a product disclaimer.
+The public app contains a synthetic social dashboard and a **web beta for
+private, local analysis of a user's Spotify history export**. Spotify Web API
+data still cannot feed calculated listener metrics under the current
+[Developer Policy](https://developer.spotify.com/policy); that constraint is
+enforced in code and tests rather than left as a disclaimer.
 
 ## What works now
 
@@ -18,7 +19,16 @@ in code and tests, not left as a product disclaimer.
 - Spotify and ListenBrainz provider adapters with explicit capabilities;
 - domain aggregation that deduplicates evidence and only sums actual duration;
 - owner/friend/group/public visibility rules;
+- local import of Spotify Extended Streaming History JSON in the web browser;
+- exact sums of provider-reported `ms_played`, arbitrary date ranges,
+  imported-history top artist, and the latest 20 imported plays;
 - unit, contract, integration, architecture, production smoke, and iOS bundle checks.
+
+The importer keeps only normalized timestamp, listened milliseconds, track,
+artist, and an optional Spotify track link in IndexedDB. Raw files are never
+uploaded or persisted, and podcast rows plus private/incognito rows are ignored.
+This beta does **not** sync imported history to friends, groups, a server, or the
+iPhone app.
 
 ## Local development
 
@@ -83,8 +93,9 @@ Read these before extending the system:
 
 The next product phase is app authentication, Postgres/RLS, explicit sharing
 consent, ListenBrainz ownership validation/import, and deletion/disconnect.
-Spotify remains a separate direct-data/link-out adapter. See
-[the roadmap](docs/roadmap.md).
+The local Spotify import remains private until social redistribution has passed
+separate policy, consent, and security review. A background Spotify observer is
+disabled pending written provider permission. See [the roadmap](docs/roadmap.md).
 
 ## License
 

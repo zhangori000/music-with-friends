@@ -93,6 +93,7 @@ export function DashboardClient({
           <span>Music with Friends</span>
         </a>
         <nav className="topnav" aria-label="Primary navigation">
+          <Link href="/import">Import history</Link>
           <a href="/docs">Architecture</a>
           <Link href="/api/v1/demo/groups/friday-loop?range=this_week">API</Link>
           <button className="button button-ghost" onClick={() => dialogRef.current?.showModal()}>
@@ -237,6 +238,7 @@ export function DashboardClient({
           <h2 id="source-dialog-title">Bring listening evidence, not assumptions.</h2>
           <p>ListenBrainz is the recommended analytics source for the private beta. Spotify can provide direct recent tracks and top-item affinity, but not derived statistics.</p>
           <div className="source-options">
+            <Link href="/import" onClick={() => dialogRef.current?.close()}><strong>Spotify history export</strong><span>Exact minutes and arbitrary ranges · stays on this device</span><b>Import JSON →</b></Link>
             <a href="https://listenbrainz.org/add-data/" target="_blank" rel="noreferrer"><strong>ListenBrainz</strong><span>Timestamped history · public upstream</span><b>Recommended ↗</b></a>
             <a href="/docs#spotify"><strong>Spotify</strong><span>Recent 20 + provider top items</span><b>Read limits →</b></a>
           </div>

@@ -23,7 +23,12 @@ function evidence(
       durationMs: 240_000,
       externalUrl: "https://open.spotify.com/track/example",
     },
-    context: { kind: "playlist", id: "playlist-1", name: "Night Drive" },
+    context: {
+      kind: "playlist",
+      id: "playlist-1",
+      name: "Night Drive",
+      quality: "verified",
+    },
     ...overrides,
   };
 }
@@ -81,7 +86,12 @@ describe("aggregateListeningEvidence", () => {
         evidence({
           id: "b-1",
           track: { id: "track-b", title: "North", artist: "Aster" },
-          context: { kind: "playlist", id: "playlist-b", name: "Focus" },
+          context: {
+            kind: "playlist",
+            id: "playlist-b",
+            name: "Focus",
+            quality: "verified",
+          },
         }),
       ],
       range,
@@ -89,6 +99,24 @@ describe("aggregateListeningEvidence", () => {
 
     expect(result.topArtist).toEqual({ name: "Aster", playCount: 1 });
     expect(result.topPlaylist).toEqual({ name: "Focus", playCount: 1 });
+  });
+
+  it("does not promote inferred playlist membership into a played-from metric", () => {
+    const result = aggregateListeningEvidence(
+      [
+        evidence({
+          context: {
+            kind: "playlist",
+            id: "playlist-guess",
+            name: "Maybe Focus",
+            quality: "inferred",
+          },
+        }),
+      ],
+      range,
+    );
+
+    expect(result.topPlaylist).toBeNull();
   });
 
   it("prefers a larger play count over insertion order", () => {
@@ -116,7 +144,12 @@ describe("aggregateListeningEvidence", () => {
       [
         evidence({
           actualDurationMs: null,
-          context: { kind: "album", id: "album-1", name: "Orbit" },
+          context: {
+            kind: "album",
+            id: "album-1",
+            name: "Orbit",
+            quality: "verified",
+          },
         }),
       ],
       range,

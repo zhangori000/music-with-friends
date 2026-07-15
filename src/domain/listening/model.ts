@@ -18,6 +18,7 @@ export type ListeningContext = {
   kind: "playlist" | "album" | "artist" | "unknown";
   id: string | null;
   name: string;
+  quality: "verified" | "inferred" | "unknown";
 };
 
 export type ListeningEvidence = {

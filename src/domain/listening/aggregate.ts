@@ -84,7 +84,10 @@ export function aggregateListeningEvidence(
     topArtist: topCount(inRange.map((item) => item.track.artist)),
     topPlaylist: topCount(
       inRange.flatMap((item) =>
-        item.context?.kind === "playlist" ? [item.context.name] : [],
+        item.context?.kind === "playlist" &&
+        item.context.quality === "verified"
+          ? [item.context.name]
+          : [],
       ),
     ),
   };

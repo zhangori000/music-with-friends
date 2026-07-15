@@ -20,6 +20,7 @@ const evidence: ListeningEvidence[] = Array.from({ length: 10_000 }, (_, index) 
     kind: "playlist",
     id: `playlist-${index % 20}`,
     name: `Playlist ${index % 20}`,
+    quality: "verified",
   },
 }));
 

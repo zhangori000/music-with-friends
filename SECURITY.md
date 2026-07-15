@@ -3,9 +3,10 @@
 ## Supported version
 
 This project is pre-1.0. Only the latest commit on the default branch is supported with
-security fixes. The current public slice uses synthetic data; future live-data work is
-still security-sensitive because mistakes could expose credentials or establish unsafe
-defaults.
+security fixes. The current public slice uses synthetic social data and a browser-local
+Spotify history importer. Raw history is not uploaded, but the normalized IndexedDB
+copy is still sensitive. Future live-data work could expose credentials or establish
+unsafe defaults if these boundaries regress.
 
 ## Report a vulnerability privately
 
@@ -37,6 +38,7 @@ Reports involving these areas are treated as high risk:
 - OAuth state/PKCE bypass, callback replay, or account-linking confusion;
 - remote code execution, injection, XSS, SSRF, or unsafe external redirects;
 - deletion/export failures that retain supposedly erased personal data;
+- upload, logging, or unintended social disclosure of imported listening history;
 - provider-policy bypass that derives or redistributes prohibited data.
 
 If a secret is exposed, revoke or rotate it before investigating secondary symptoms.

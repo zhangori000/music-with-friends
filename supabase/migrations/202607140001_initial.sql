@@ -295,7 +295,7 @@ create table public.listening_events (
     not analytics_eligible or played_at is not null
   ),
   constraint listening_events_analytics_provider_allowlist check (
-    not analytics_eligible or provider in ('listenbrainz', 'demo')
+    not analytics_eligible or provider in ('listenbrainz', 'manual_import', 'demo')
   ),
   constraint listening_events_analytics_requires_consent check (
     not analytics_eligible or provider = 'demo' or consent_record_id is not null
