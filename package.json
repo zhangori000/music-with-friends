@@ -1,0 +1,54 @@
+{
+  "name": "music-with-friends",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
+    "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "test": "npm run test:unit && npm run test:architecture && npm run test:smoke",
+    "test:unit": "vitest run tests/unit tests/contracts tests/integration",
+    "test:architecture": "vitest run tests/architecture",
+    "test:smoke": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test:coverage": "vitest run --coverage tests/unit tests/contracts tests/integration tests/architecture",
+    "typecheck": "tsc --noEmit",
+    "mobile:typecheck": "npm --prefix apps/mobile run typecheck",
+    "mobile:export": "npm --prefix apps/mobile run export:ios",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run mobile:typecheck && npm run mobile:export",
+    "bench": "vitest bench benchmarks",
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+  },
+  "dependencies": {
+    "next": "16.2.10",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.44.0",
+    "@cloudflare/workers-types": "5.20260714.1",
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.26",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.10",
+    "react-server-dom-webpack": "19.2.6",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "vinext": "0.0.50",
+    "vite": "8.1.4",
+    "vitest": "^4.1.10",
+    "wrangler": "4.110.0"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  },
+  "type": "module"
+}

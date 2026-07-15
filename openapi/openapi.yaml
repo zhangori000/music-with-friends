@@ -1,0 +1,344 @@
+openapi: 3.1.0
+info:
+  title: Music with Friends API
+  version: 1.0.0
+  description: >-
+    Versioned API shared by the web and iPhone clients. The current endpoint
+    serves synthetic demo data and does not expose provider credentials.
+servers:
+  - url: /
+    description: Current origin
+paths:
+  /api/v1/demo/groups/{slug}:
+    get:
+      operationId: getDemoGroupDashboard
+      summary: Get a demo group dashboard
+      description: >-
+        Returns the synthetic dashboard for `friday-loop`. Omitting `range`
+        defaults to `this_week`.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Demo group slug. Only `friday-loop` currently exists.
+          schema:
+            type: string
+            minLength: 1
+          example: friday-loop
+        - name: range
+          in: query
+          required: false
+          description: Dashboard time-range preset.
+          schema:
+            $ref: "#/components/schemas/RangePreset"
+            default: this_week
+      responses:
+        "200":
+          description: Schema-valid demo dashboard.
+          headers:
+            Cache-Control:
+              description: Public demo response cache policy.
+              schema:
+                type: string
+              example: public, max-age=60, stale-while-revalidate=300
+            X-Content-Type-Options:
+              description: MIME-sniffing protection.
+              schema:
+                type: string
+                const: nosniff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResponse"
+        "400":
+          description: The requested range is unsupported.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: invalid_range
+                  message: "Unsupported range: previous_fortnight"
+        "404":
+          description: The demo group does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: group_not_found
+                  message: Group not found.
+components:
+  schemas:
+    RangePreset:
+      type: string
+      enum:
+        - this_week
+        - this_month
+        - this_year
+        - all_time
+
+    ProfileVisibility:
+      type: string
+      enum:
+        - private
+        - friends
+        - groups
+        - public
+
+    DashboardSource:
+      type: string
+      enum:
+        - demo
+        - listenbrainz
+        - spotify-direct
+
+    CountedName:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - playCount
+      properties:
+        name:
+          type: string
+          minLength: 1
+        playCount:
+          type: integer
+          minimum: 0
+
+    ListenedMinutes:
+      type: object
+      additionalProperties: false
+      required:
+        - value
+        - quality
+        - coverageRatio
+      properties:
+        value:
+          type: number
+          minimum: 0
+        quality:
+          type: string
+          enum:
+            - exact
+            - partial
+            - unavailable
+        coverageRatio:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    DashboardMeta:
+      type: object
+      additionalProperties: false
+      required:
+        - apiVersion
+        - generatedAt
+        - range
+        - dataMode
+        - dataPolicy
+      properties:
+        apiVersion:
+          type: string
+          const: v1
+        generatedAt:
+          type: string
+          format: date-time
+        range:
+          $ref: "#/components/schemas/RangePreset"
+        dataMode:
+          type: string
+          enum:
+            - synthetic
+            - live
+        dataPolicy:
+          type: string
+          minLength: 1
+
+    DashboardGroup:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - description
+        - visibility
+        - memberCount
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        visibility:
+          $ref: "#/components/schemas/ProfileVisibility"
+        memberCount:
+          type: integer
+          minimum: 1
+
+    DashboardSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - playCount
+        - uniqueTrackCount
+        - listenedMinutes
+        - topArtist
+        - topPlaylist
+      properties:
+        playCount:
+          type: integer
+          minimum: 0
+        uniqueTrackCount:
+          type: integer
+          minimum: 0
+        listenedMinutes:
+          $ref: "#/components/schemas/ListenedMinutes"
+        topArtist:
+          oneOf:
+            - $ref: "#/components/schemas/CountedName"
+            - type: "null"
+        topPlaylist:
+          oneOf:
+            - $ref: "#/components/schemas/CountedName"
+            - type: "null"
+
+    DashboardMember:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - displayName
+        - handle
+        - initials
+        - accent
+        - listenedMinutes
+        - playCount
+        - topArtist
+        - source
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        handle:
+          type: string
+        initials:
+          type: string
+          minLength: 1
+          maxLength: 3
+        accent:
+          type: string
+        listenedMinutes:
+          type: number
+          minimum: 0
+        playCount:
+          type: integer
+          minimum: 0
+        topArtist:
+          type: string
+        source:
+          $ref: "#/components/schemas/DashboardSource"
+
+    RecentListen:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - artist
+        - playedAt
+        - playedBy
+        - source
+        - externalUrl
+        - accent
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        artist:
+          type: string
+        playedAt:
+          type: string
+          format: date-time
+        playedBy:
+          type: string
+        source:
+          $ref: "#/components/schemas/DashboardSource"
+        externalUrl:
+          type: string
+          format: uri
+        accent:
+          type: string
+
+    ProviderNotice:
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - body
+        - href
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        href:
+          type: string
+
+    DashboardResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - meta
+        - group
+        - summary
+        - members
+        - recent
+        - providerNotice
+      properties:
+        meta:
+          $ref: "#/components/schemas/DashboardMeta"
+        group:
+          $ref: "#/components/schemas/DashboardGroup"
+        summary:
+          $ref: "#/components/schemas/DashboardSummary"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardMember"
+        recent:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentListen"
+        providerNotice:
+          $ref: "#/components/schemas/ProviderNotice"
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - invalid_range
+                - group_not_found
+            message:
+              type: string

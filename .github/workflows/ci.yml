@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/mobile/package-lock.json
+
+      - name: Install web and API dependencies
+        run: npm ci
+
+      - name: Install mobile dependencies
+        run: npm ci --prefix apps/mobile
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check web and API
+        run: npm run typecheck
+
+      - name: Run unit, contract, integration, and architecture tests
+        run: |
+          npm run test:unit
+          npm run test:architecture
+
+      - name: Build and smoke-test the web app
+        run: |
+          npm run build
+          node --test tests/rendered-html.test.mjs
+
+      - name: Type-check the iPhone app
+        run: npm run mobile:typecheck
+
+      - name: Export the iPhone app
+        run: npm run mobile:export
