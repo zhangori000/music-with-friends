@@ -2,6 +2,18 @@ import { z } from "zod";
 import type { MusicProvider } from "../../application/ports/music-provider";
 import type { ListeningEvidence } from "../../domain/listening/model";
 import { providerCapabilities } from "../../domain/providers/capabilities";
+import { parseTrustedProviderLink } from "./provider-link";
+
+const spotifyExternalUrlSchema = z.string().transform((value, context) => {
+  const trustedUrl = parseTrustedProviderLink("spotify-external", value);
+  if (trustedUrl) return trustedUrl;
+
+  context.addIssue({
+    code: "custom",
+    message: "Spotify returned an untrusted external URL.",
+  });
+  return z.NEVER;
+});
 
 const recentlyPlayedSchema = z.object({
   items: z.array(
@@ -14,7 +26,7 @@ const recentlyPlayedSchema = z.object({
         id: z.string(),
         name: z.string(),
         duration_ms: z.number(),
-        external_urls: z.object({ spotify: z.string().url() }),
+        external_urls: z.object({ spotify: spotifyExternalUrlSchema }),
         artists: z.array(z.object({ name: z.string() })).min(1),
       }),
     }),

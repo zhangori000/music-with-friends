@@ -20,10 +20,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -48,7 +48,10 @@ jobs:
           npm run test:unit
           npm run test:architecture
 
-      - name: Build and smoke-test the web app
+      - name: Build the Vercel deployment target
+        run: npm run vercel-build
+
+      - name: Build and smoke-test the Cloudflare deployment target
         run: |
           npm run build
           node --test tests/rendered-html.test.mjs

@@ -3,6 +3,8 @@
 A social listening room for friends and groups, with one versioned API serving
 both a Next.js web app and an Expo iPhone app.
 
+**Live synthetic demo:** https://music-with-friends-delta.vercel.app
+
 The current public slice is intentionally a synthetic demo. Spotify can supply
 recent tracks and Spotify-ranked top items, but its current Developer Policy
 blocks apps from calculating new listener metrics. That constraint is enforced

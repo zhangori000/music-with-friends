@@ -3,6 +3,42 @@ import { DemoMusicProvider } from "../../src/infrastructure/providers/demo-music
 import { SpotifyMusicProvider } from "../../src/infrastructure/providers/spotify-music-provider";
 import { ListenBrainzMusicProvider } from "../../src/infrastructure/providers/listenbrainz-music-provider";
 
+function spotifyRecentlyPlayedWithUrl(externalUrl: string) {
+  return {
+    items: [
+      {
+        played_at: "2026-07-14T20:00:00.000Z",
+        context: null,
+        track: {
+          id: "track-1",
+          name: "Midnight City",
+          duration_ms: 244_000,
+          external_urls: { spotify: externalUrl },
+          artists: [{ name: "M83" }],
+        },
+      },
+    ],
+  };
+}
+
+function listenBrainzHistoryWithUrl(originUrl: string) {
+  return {
+    payload: {
+      listens: [
+        {
+          listened_at: 1_784_070_000,
+          recording_msid: "recording-1",
+          track_metadata: {
+            artist_name: "Juniper Vale",
+            track_name: "Satellite Heart",
+            additional_info: { origin_url: originUrl },
+          },
+        },
+      ],
+    },
+  };
+}
+
 describe.each([
   ["demo", new DemoMusicProvider()],
   ["spotify", new SpotifyMusicProvider({ accessToken: "fixture-token" })],
@@ -129,6 +165,31 @@ describe("Spotify adapter contract", () => {
     );
     await expect(malformed.getRecentItems()).rejects.toThrow();
   });
+
+  it.each([
+    ["a non-HTTPS URL", "http://open.spotify.com/track/track-1"],
+    [
+      "credentials in the URL",
+      "https://listener:secret@open.spotify.com/track/track-1",
+    ],
+    [
+      "a lookalike hostname",
+      "https://open.spotify.com.attacker.example/track/track-1",
+    ],
+    [
+      "an unapproved subdomain",
+      "https://preview.open.spotify.com/track/track-1",
+    ],
+    ["a non-standard port", "https://open.spotify.com:8443/track/track-1"],
+    ["an alternate scheme", "javascript:alert('spotify')"],
+  ])("rejects %s returned as a Spotify link", async (_case, externalUrl) => {
+    const provider = new SpotifyMusicProvider({
+      accessToken: "fixture-token",
+      fetch: async () => Response.json(spotifyRecentlyPlayedWithUrl(externalUrl)),
+    });
+
+    await expect(provider.getRecentItems()).rejects.toThrow();
+  });
 });
 
 describe("ListenBrainz capability contract", () => {
@@ -253,5 +314,35 @@ describe("ListenBrainz capability contract", () => {
       /failed with 503/i,
     );
     await expect(malformed.getRecentItems()).rejects.toThrow();
+  });
+
+  it.each([
+    ["a non-HTTPS URL", "http://musicbrainz.org/recording/recording-1"],
+    [
+      "credentials in the URL",
+      "https://listener:secret@musicbrainz.org/recording/recording-1",
+    ],
+    [
+      "a lookalike hostname",
+      "https://musicbrainz.org.attacker.example/recording/recording-1",
+    ],
+    [
+      "an unapproved subdomain",
+      "https://preview.musicbrainz.org/recording/recording-1",
+    ],
+    [
+      "a non-standard port",
+      "https://musicbrainz.org:8443/recording/recording-1",
+    ],
+    ["an alternate scheme", "javascript:alert('listenbrainz')"],
+  ])("drops %s returned as a ListenBrainz origin link", async (_case, originUrl) => {
+    const provider = new ListenBrainzMusicProvider({
+      username: "ori",
+      fetch: async () => Response.json(listenBrainzHistoryWithUrl(originUrl)),
+    });
+
+    const [item] = await provider.getRecentItems();
+
+    expect(item.track.externalUrl).toBeNull();
   });
 });

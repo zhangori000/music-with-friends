@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { MusicProvider } from "../../application/ports/music-provider";
 import type { ListeningEvidence } from "../../domain/listening/model";
 import { providerCapabilities } from "../../domain/providers/capabilities";
+import { parseTrustedProviderLink } from "./provider-link";
 
 const listenBrainzResponseSchema = z.object({
   payload: z.object({
@@ -82,8 +83,10 @@ export class ListenBrainzMusicProvider implements MusicProvider {
           title: listen.track_metadata.track_name,
           artist: listen.track_metadata.artist_name,
           durationMs: info?.duration_ms ?? null,
-          externalUrl:
-            externalUrl && URL.canParse(externalUrl) ? externalUrl : null,
+          externalUrl: parseTrustedProviderLink(
+            "listenbrainz-origin",
+            externalUrl,
+          ),
         },
         context: null,
       } satisfies ListeningEvidence;
